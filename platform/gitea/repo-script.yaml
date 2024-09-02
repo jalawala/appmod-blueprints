@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gitea-app-repos-script
+  namespace: gitea
+data:
+  run-script.sh: |-
+    #!/bin/sh
+    
+    echo "Creating app repository"
+    apk add gitea
+    apk add git
+    apk add openssh-client
+
+    git clone https://github.com/aws-samples/appmod-blueprints.git
+    mkdir dotnet && cp -r appmod-blueprints/applications/dotnet/ ./ 
+    mkdir golang && cp -r appmod-blueprints/applications/golang/ ./ 
+    mkdir java && cp -r appmod-blueprints/applications/java/ ./ 
+
+    curl -k -X POST "my-gitea-http.gitea.svc.cluster.local:3000/api/v1/admin/users/giteaAdmin/repos" -H "content-type: application/json" -H 'Authorization: Basic <REPLACE_HERE>' --data '{"name":"dotnet"}'
+    curl -k -X POST "my-gitea-http.gitea.svc.cluster.local:3000/api/v1/admin/users/giteaAdmin/repos" -H "content-type: application/json" -H 'Authorization: Basic <REPLACE_HERE>' --data '{"name":"golang"}'
+    curl -k -X POST "my-gitea-http.gitea.svc.cluster.local:3000/api/v1/admin/users/giteaAdmin/repos" -H "content-type: application/json" -H 'Authorization: Basic <REPLACE_HERE>' --data '{"name":"java"}'
+
+    git config --global user.email "git@gitea.com"
+    git config --global user.name "gitea"
+    
+    cd dotnet 
+    git init
+    git checkout -b main
+    git add .
+    git commit -m "first commit"
+    git remote add origin git@my-gitea-ssh.gitea.svc.cluster.local:2222/giteaAdmin/dotnet.git
+    git push -u origin main
+
+    cd ..
+    cd golang 
+    git init
+    git checkout -b main
+    git add .
+    git commit -m "first commit"
+    git remote add origin git@my-gitea-ssh.gitea.svc.cluster.local:2222/giteaAdmin/golang.git
+    git push -u origin main
+
+    cd ..
+    cd java 
+    git init
+    git checkout -b main
+    git add .
+    git commit -m "first commit"
+    git remote add origin git@my-gitea-ssh.gitea.svc.cluster.local:2222/giteaAdmin/java.git
+    git push -u origin main
+    exit 0
