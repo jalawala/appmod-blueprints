@@ -1,10 +1,8 @@
 #!/bin/sh
     
-# This script requires GITEA_DOMAIN_NAME & DOMAIN_NAME variable to be created already
-# GITEA_DOMAIN_NAME is the domain name of the Gitea instance
+# This script requires DOMAIN_NAME variable to be setup already
 # DOMAIN_NAME is the domain name of the cluster
-# Example: GITEA_DOMAIN_NAME=gitea.example.com 
-# DOMAIN_NAME=example.com
+# export DOMAIN_NAME=gitea.user.people.aws.dev
 
 echo "Creating app repositories in gitea"
 apk add gitea
@@ -18,19 +16,16 @@ USERNAME=$(kubectl get secret gitea-credential -n gitea -o jsonpath='{.data.user
 USER_PASS="${USERNAME}:${PASSWORD}"
 ENCODED_USER_PASS=$(echo -n "${USER_PASS}" | base64)
 
-curl -k -X POST "https://$GITEA_DOMAIN_NAME/api/v1/admin/users/giteaAdmin/repos" -H "content-type: application/json" -H "Authorization: Basic $ENCODED_USER_PASS" --data '{"name":"dotnet"}'
-curl -k -X POST "https://$GITEA_DOMAIN_NAME/api/v1/admin/users/giteaAdmin/repos" -H "content-type: application/json" -H "Authorization: Basic $ENCODED_USER_PASS" --data '{"name":"golang"}'
-curl -k -X POST "https://$GITEA_DOMAIN_NAME/api/v1/admin/users/giteaAdmin/repos" -H "content-type: application/json" -H "Authorization: Basic $ENCODED_USER_PASS" --data '{"name":"java"}'
-
-git config --global user.email "git@gitea.com"
-git config --global user.name $USERNAME
+curl -k -X POST "https://$DOMAIN_NAME/gitea/api/v1/admin/users/$USERNAME/repos" -H "content-type: application/json" -H "Authorization: Basic $ENCODED_USER_PASS" --data '{"name":"dotnet"}'
+curl -k -X POST "https://$DOMAIN_NAME/gitea/api/v1/admin/users/$USERNAME/repos" -H "content-type: application/json" -H "Authorization: Basic $ENCODED_USER_PASS" --data '{"name":"golang"}'
+curl -k -X POST "https://$DOMAIN_NAME/gitea/api/v1/admin/users/$USERNAME/repos" -H "content-type: application/json" -H "Authorization: Basic $ENCODED_USER_PASS" --data '{"name":"java"}'
 
 cd dotnet 
 git init
 git checkout -b main
 git add .
-git commit -m "first commit"
-git remote add origin git@$DOMAIN_NAME/giteaAdmin/golang.git
+git commit -m "first commit" 
+git remote add origin https://$DOMAIN_NAME/giteaAdmin/dotnet.git
 git push -u origin main
 
 cd ..
@@ -39,7 +34,7 @@ git init
 git checkout -b main
 git add .
 git commit -m "first commit"
-git remote add origin git@$DOMAIN_NAME/giteaAdmin/golang.git
+git remote add origin https://$DOMAIN_NAME/giteaAdmin/golang.git
 git push -u origin main
 
 cd ..
@@ -48,6 +43,6 @@ git init
 git checkout -b main
 git add .
 git commit -m "first commit"
-git remote add origin git$DOMAIN_NAME/giteaAdmin/java.git
+git remote add origin https://$DOMAIN_NAME/giteaAdmin/java.git
 git push -u origin main
 exit 0
