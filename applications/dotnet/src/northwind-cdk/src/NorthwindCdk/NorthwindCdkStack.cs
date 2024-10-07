@@ -25,7 +25,7 @@ namespace NorthwindCdk
             codeBuildRole.AddManagedPolicy(ManagedPolicy.FromAwsManagedPolicyName("AmazonEC2ContainerRegistryFullAccess"));
             codeBuildRole.AddManagedPolicy(ManagedPolicy.FromAwsManagedPolicyName("CloudWatchLogsFullAccess"));
             
-            Project project = new Project(this, "NoSourceProject", new ProjectProps
+            Project project = new Project(this, "ModernEnggCB", new ProjectProps
             {
                 BuildSpec = BuildSpec.FromAsset("src/buildspec.yml"),
                 Environment = new BuildEnvironment
