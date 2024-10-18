@@ -29,8 +29,13 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 
+resource "random_integer" "suffix" {
+  min = 1000
+  max = 9999
+}
+
 resource "aws_secretsmanager_secret" "ec2_credentials" {
-  name = "mod-engg-workshop-ec2-credentials-1234"
+  name = "mod-engg-workshop-ec2-credentials-${random_integer.suffix.result}"
 }
 
 resource "random_password" "ec2_password" {

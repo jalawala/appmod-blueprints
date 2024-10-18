@@ -1,5 +1,5 @@
   module "vpc" {
-    source             = "./vpc"
+    source             = "../vpc"
     vpc_name           = var.vpc_name
     vpc_cidr           = var.vpc_cidr
     name_prefix        = var.name_prefix
@@ -7,7 +7,7 @@
   }
   
   module "aurora" {
-    source      = "./aurora"
+    source      = "../aurora"
     vpc_id      = module.vpc.vpc_id
     subnet_ids  = module.vpc.subnet_ids
     vpc_cidr    = module.vpc.vpc_cidr
@@ -17,11 +17,14 @@
   }
   
   module "ec2" {
-    source      = "./ec2"
+    source      = "../ec2"
     vpc_id      = module.vpc.vpc_id
     subnet_id   = module.vpc.subnet_ids[0]
     vpc_cidr    = module.vpc.vpc_cidr
     name_prefix = var.name_prefix
     key_name    = var.key_name 
   }
+  
+ # outputs.tf in the parent directory
+
   

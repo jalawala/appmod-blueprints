@@ -1,7 +1,7 @@
 variable "vpc_name" {
   description = "Name of the existing VPC (leave empty to create a new VPC)"
   type        = string
-  default     = "default-testing"
+  default     = "abcde"
 }
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
@@ -18,7 +18,7 @@ variable "availability_zones" {
 variable "name_prefix" {
   description = "Prefix for resource names"
   type        = string
-  default     = "ws"
+  default     = "ws-dev"
 }
 
 variable "db_username" {

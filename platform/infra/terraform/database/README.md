@@ -22,8 +22,9 @@ Additionally, it creates a new database named "Northwind" and sets up an admin u
 ## Project Structure
 
 .
-├── main.tf
-├── variables.tf
+├── dev-main.tf
+|-- prod-main.tf
+├─ variables.tf
 ├── providers.tf
 ├── vpc/
 │ ├── main.tf

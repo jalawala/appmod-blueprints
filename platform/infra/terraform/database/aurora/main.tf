@@ -51,7 +51,7 @@ resource "aws_security_group_rule" "rds_mod_engg_wksp_babelfish_inbound" {
 }
 
 resource "aws_rds_cluster_parameter_group" "rds_mod_engg_wksp_pg" {
-  name   = "mod-engg-wksp-pg"
+  name   = "${var.name_prefix}mod-engg-wksp-pg"
   family = "aurora-postgresql16"
 
   parameter {
@@ -66,8 +66,13 @@ resource "aws_rds_cluster_parameter_group" "rds_mod_engg_wksp_pg" {
   }
 }
 
+resource "random_integer" "suffix" {
+  min = 1000
+  max = 9999
+}
+
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name = "mod-engg-workshop-db-credentials-1234"
+  name = "mod-engg-workshop-db-credentials-${random_integer.suffix.result}"
 }
 
 resource "random_password" "db_password" {
@@ -99,7 +104,7 @@ locals {
   }
   
 resource "aws_rds_cluster" "rds_cluster_mod_engg_wksp" {
-  cluster_identifier = "mod-engg-wksp"
+  cluster_identifier = "${var.name_prefix}mod-engg-wksp"
   availability_zones = local.aurora_azs
 
   engine         = "aurora-postgresql"
@@ -137,7 +142,7 @@ resource "aws_rds_cluster" "rds_cluster_mod_engg_wksp" {
 resource "aws_rds_cluster_instance" "rds_cluster_mod_engg_wksp_writer" {
   cluster_identifier = aws_rds_cluster.rds_cluster_mod_engg_wksp.id
   instance_class     = "db.r6g.2xlarge"
-  identifier         = "mod-engg-wksp-writer"
+  identifier         = "${var.name_prefix}mod-engg-wksp-writer"
 
   engine         = aws_rds_cluster.rds_cluster_mod_engg_wksp.engine
   engine_version = aws_rds_cluster.rds_cluster_mod_engg_wksp.engine_version
@@ -156,8 +161,9 @@ resource "aws_rds_cluster_instance" "rds_cluster_mod_engg_wksp_writer" {
   }
 }
 
+
 resource "aws_cloudwatch_log_group" "rds_cluster_mod_engg_wksp_lg" {
-  name              = "/aws/rds/cluster/${aws_rds_cluster.rds_cluster_mod_engg_wksp.cluster_identifier}/postgresql"
+  name              = "/aws/rds/cluster/${aws_rds_cluster.rds_cluster_mod_engg_wksp.cluster_identifier}-${random_integer.suffix.result}/postgresql"
   retention_in_days = 60
 }
 
