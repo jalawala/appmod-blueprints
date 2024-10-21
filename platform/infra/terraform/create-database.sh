@@ -7,7 +7,7 @@ terraform -chdir=database/dev init -reconfigure -backend-config="key=dev/databas
   -backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
 
 # Apply the infrastructure changes to deploy DEV Database cluster
-terraform -chdir=database/dev apply -var key_name="ws-dev-ec2-key" #-var aws_region="${TF_VAR_aws_region}"
+terraform -chdir=database/dev apply -var key_name="ws-dev-ec2-key" -var vpc_name=$TF_VAR_vpc_name #-var aws_region="${TF_VAR_aws_region}"
   
 # Initialize backend for DEV - Database Cluster Creation
 terraform -chdir=database/prod init -reconfigure -backend-config="key=prod/database-cluster.tfstate" \
@@ -16,7 +16,7 @@ terraform -chdir=database/prod init -reconfigure -backend-config="key=prod/datab
   -backend-config="dynamodb_table=$TF_VAR_state_ddb_lock_table"
 
 # Apply the infrastructure changes to deploy DEV Database cluster
-terraform -chdir=database/prod apply -var key_name="ws-prod-ec2-key" #-var aws_region="${TF_VAR_aws_region}"
+terraform -chdir=database/prod apply -var key_name="ws-prod-ec2-key" -var vpc_name=$TF_VAR_vpc_name #-var aws_region="${TF_VAR_aws_region}"
 
 echo "-------- Dev Cluster --------"
 terraform -chdir=database/dev output
