@@ -36,6 +36,6 @@ resource "aws_codebuild_project" "database_install_script_project" {
 
   source {
     type      = "NO_SOURCE"
-    buildspec = file("buildspec-db.yml")
+    buildspec = file("db-buildspec.yml")
   }
 }
