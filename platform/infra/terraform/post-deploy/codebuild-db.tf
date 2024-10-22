@@ -1,6 +1,6 @@
 # IAM service role for codebuild
 
-data "aws_iam_role" "workshop-role" {
+data "aws_iam_role" "db-workshop-role" {
   name = "developer-env-VSCodeInstanceRole"
 }
 
@@ -10,7 +10,7 @@ resource "aws_codebuild_project" "database_install_script_project" {
 
   name         = var.db_codebuild_project_name
   description  = "CodeBuild project for Database install script"
-  service_role = data.aws_iam_role.workshop-role.arn
+  service_role = data.aws_iam_role.db-workshop-role.arn
 
   artifacts {
     type = "NO_ARTIFACTS"
