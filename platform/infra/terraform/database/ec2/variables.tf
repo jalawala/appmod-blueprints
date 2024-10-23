@@ -5,12 +5,10 @@ variable "vpc_id" {
 variable "vpc_private_subnets" {
   type        = list(string)
   description = "VPC SubnetId of the EKS Cluster"
-  default     = []
 }
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
-  default     = ""
 }
 
 variable "name_prefix" {

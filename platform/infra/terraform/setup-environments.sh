@@ -60,12 +60,6 @@ cd ${REPO_ROOT}/platform/infra/terraform/mgmt/terraform/mgmt-cluster/
 export TF_eks_cluster_vpc_id=$(terraform output -raw eks_cluster_vpc_id)
 export TF_eks_cluster_private_subnets=$(terraform output -json eks_cluster_private_subnets)
 echo "private subnets are =" $TF_eks_cluster_private_subnets
-echo "Starting the 30-second wait..."
-
-# Wait for 30 seconds
-sleep 30
-
-echo "30 seconds have passed!"
 export TF_eks_cluster_vpc_cidr=$(terraform output -raw vpc_cidr) # for db and ec2
 export TF_eks_cluster_private_az=$(terraform output -json availability_zones) # for db and ec2
 
@@ -135,9 +129,9 @@ export TF_VAR_state_ddb_lock_table=$(terraform -chdir=bootstrap output -raw eks-
 export TF_VAR_managed_prometheus_workspace_id=$(terraform -chdir=bootstrap output -raw amp_workspace_id)
 export TF_VAR_managed_grafana_workspace_id=$(terraform -chdir=bootstrap output -raw amg_workspace_id)
 export TF_VAR_grafana_workspace_endpoint=$(terraform -chdir=bootstrap output -raw grafana_workspace_endpoint)
-
 export WORKSPACE_ENDPOINT=$TF_VAR_grafana_workspace_endpoint
 export WORKSPACE_ID=$TF_VAR_managed_grafana_workspace_id
+
 
 # Export the Keycloak admin password for the workspace from the Management Cluster Keycloak
 export KEYCLOAK_ADMIN_PASSWORD=$(kubectl get secret keycloak-config -n keycloak --template={{.data.KEYCLOAK_ADMIN_PASSWORD}} | base64 -d)

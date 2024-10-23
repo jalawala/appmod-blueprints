@@ -73,16 +73,7 @@ variable "vpc_private_subnets" {
   description = "EKS Private Subnets of the VPC"
 }
 
-##### added beloe for DB and EC2########
-variable "vpc_id" {
-  type        = string
-  description = "VPC ID of the EKS Cluster"
-}
-
-variable "subnet_ids" {
-  type        = string
-  description = "VPC SubnetIds of the EKS Cluster"
-}
+##### added below for DB and EC2########
 
 variable "vpc_name" {
   description = "Name of the existing VPC (leave empty to create a new VPC)"
@@ -93,7 +84,7 @@ variable "vpc_name" {
 variable "name_prefix" {
   description = "Prefix for resource names"
   type        = string
-  default     = "ws-dev"
+  default     = "ws-prod"
 }
 
 variable "db_username" {
@@ -106,13 +97,11 @@ variable "db_username" {
 variable "vpc_cidr" {
   description = "CIDR block for the VPC"
   type        = string
-  default     = ""
 }
 
 variable "availability_zones" {
   description = "List of availability zones (optional)"
   type        = list(string)
-  default     = []
 }
 
 variable "key_name" {

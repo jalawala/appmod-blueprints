@@ -80,5 +80,6 @@ output "prod_ec2_credentials_secret_arn" {
 output "prod_ec2_credentials_secret_name" {
   description = "The name of the EC2 credentials secret"
   value       = module.ec2.ec2_credentials_secret_name
+}
 
 
