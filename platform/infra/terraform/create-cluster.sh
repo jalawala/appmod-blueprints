@@ -15,12 +15,12 @@ terraform -chdir=dev apply -var aws_region="${TF_VAR_aws_region}" \
   -var managed_prometheus_workspace_id="${TF_VAR_managed_prometheus_workspace_id}" \
   -var cluster_name="${TF_VAR_dev_cluster_name}" \
   -var grafana_api_key="${AMG_API_KEY}" \
-  -var vpc_id="${TF_VAR_vpc_id}" \
+  -var vpc_id="${TF_eks_cluster_vpc_id}" \
   -var vpc_private_subnets="${TF_eks_cluster_private_subnets}" \
   -var availability_zones="${TF_eks_cluster_private_az}" \
   -var vpc_cidr="${TF_eks_cluster_vpc_cidr}" \
-  -var key_name="ws-default-keypair" \
-  -auto-approve
+  -var key_name="ws-default-keypair" -auto-approve 
+  #TF_VAR_vpc_id
 
 aws eks update-kubeconfig --region $TF_VAR_aws_region --name $TF_VAR_prod_cluster_name
 
@@ -36,7 +36,7 @@ terraform -chdir=prod apply -var aws_region="${TF_VAR_aws_region}" \
   -var managed_prometheus_workspace_id="${TF_VAR_managed_prometheus_workspace_id}" \
   -var cluster_name="${TF_VAR_prod_cluster_name}" \
   -var grafana_api_key="${AMG_API_KEY}" \
-  -var vpc_id="${TF_VAR_vpc_id}" \
+  -var vpc_id="${TF_eks_cluster_vpc_id}" \
   -var vpc_private_subnets="${TF_eks_cluster_private_subnets}" \
   -var availability_zones="${TF_eks_cluster_private_az}" \
   -var vpc_cidr="${TF_eks_cluster_vpc_cidr}" \

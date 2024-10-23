@@ -1,7 +1,7 @@
 
 resource "aws_db_subnet_group" "rds_cluster_mod_engg_wksp_sng" {
   name       = "${var.name_prefix}mod_engg_wksp-db-subnet"
-  subnet_ids = var.subnet_ids
+  subnet_ids = var.vpc_private_subnets
 
   tags = {
     Application = "MODERN ENGG WORKSHOP DATABASE"

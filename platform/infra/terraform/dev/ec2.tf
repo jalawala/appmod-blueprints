@@ -1,7 +1,7 @@
 module "ec2" {
     source      = "../database/ec2"
     vpc_id      = var.vpc_id
-    subnet_id   = var.vpc_private_subnets[0]
+    #subnet_id   = var.vpc_private_subnets[0]
     vpc_cidr    = var.vpc_cidr
     name_prefix = var.name_prefix
     key_name    = var.key_name

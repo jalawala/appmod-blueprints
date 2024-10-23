@@ -59,9 +59,15 @@ ${REPO_ROOT}/platform/infra/terraform/mgmt/setups/install.sh
 cd ${REPO_ROOT}/platform/infra/terraform/mgmt/terraform/mgmt-cluster/
 export TF_eks_cluster_vpc_id=$(terraform output -raw eks_cluster_vpc_id)
 export TF_eks_cluster_private_subnets=$(terraform output -json eks_cluster_private_subnets)
-export TF_eks_cluster_vpc_cidr=$(terraform output -raw vpc_cidr)
-export TF_eks_cluster_private_az=$(terraform output -json availability_zones)
+echo "private subnets are =" $TF_eks_cluster_private_subnets
+echo "Starting the 30-second wait..."
 
+# Wait for 30 seconds
+sleep 30
+
+echo "30 seconds have passed!"
+export TF_eks_cluster_vpc_cidr=$(terraform output -raw vpc_cidr) # for db and ec2
+export TF_eks_cluster_private_az=$(terraform output -json availability_zones) # for db and ec2
 
 export KEYCLOAK_NAMESPACE=keycloak
 export KEYCLOAK_REALM=modernengg
@@ -178,7 +184,10 @@ terraform -chdir=dev apply -var aws_region="${TF_VAR_aws_region}" \
   -var cluster_name="${TF_VAR_dev_cluster_name}" \
   -var vpc_id="${TF_eks_cluster_vpc_id}" \
   -var vpc_private_subnets="${TF_eks_cluster_private_subnets}" \
-  -var grafana_api_key="${AMG_API_KEY}" -auto-approve
+  -var grafana_api_key="${AMG_API_KEY}" \
+  -var availability_zones="${TF_eks_cluster_private_az}" \
+  -var vpc_cidr="${TF_eks_cluster_vpc_cidr}" \
+  -var key_name="ws-default-keypair" -auto-approve
 
 export DEV_ROLE_ARN=$(terraform -chdir=dev output -raw crossplane_dev_provider_role_arn)
 export LB_DEV_ROLE_ARN=$(terraform -chdir=dev output -raw lb_controller_dev_role_arn)
@@ -205,7 +214,10 @@ terraform -chdir=prod apply -var aws_region="${TF_VAR_aws_region}" \
   -var cluster_name="${TF_VAR_prod_cluster_name}" \
   -var vpc_id="${TF_eks_cluster_vpc_id}" \
   -var vpc_private_subnets="${TF_eks_cluster_private_subnets}" \
-  -var grafana_api_key="${AMG_API_KEY}" -auto-approve
+  -var grafana_api_key="${AMG_API_KEY}" \
+  -var availability_zones="${TF_eks_cluster_private_az}" \
+  -var vpc_cidr="${TF_eks_cluster_vpc_cidr}" \
+  -var key_name="ws-default-keypair" -auto-approve
 
 export PROD_ROLE_ARN=$(terraform -chdir=prod output -raw crossplane_prod_provider_role_arn)
 export LB_PROD_ROLE_ARN=$(terraform -chdir=prod output -raw lb_controller_prod_role_arn)
