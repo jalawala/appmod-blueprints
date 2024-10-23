@@ -1,13 +1,3 @@
-variable "vpc_id" {}
-variable "subnet_ids" {}
-variable "vpc_cidr" {}
-variable "name_prefix" {}
-variable "db_username" {}
-variable "availability_zones" {
-    description = "List of availability zones"
-    type        = list(string)
-  }
-  
 
 resource "aws_db_subnet_group" "rds_cluster_mod_engg_wksp_sng" {
   name       = "${var.name_prefix}mod_engg_wksp-db-subnet"

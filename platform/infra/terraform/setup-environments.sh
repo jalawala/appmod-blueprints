@@ -59,6 +59,9 @@ ${REPO_ROOT}/platform/infra/terraform/mgmt/setups/install.sh
 cd ${REPO_ROOT}/platform/infra/terraform/mgmt/terraform/mgmt-cluster/
 export TF_eks_cluster_vpc_id=$(terraform output -raw eks_cluster_vpc_id)
 export TF_eks_cluster_private_subnets=$(terraform output -json eks_cluster_private_subnets)
+export TF_eks_cluster_vpc_cidr=$(terraform output -raw vpc_cidr)
+export TF_eks_cluster_private_az=$(terraform output -json availability_zones)
+
 
 export KEYCLOAK_NAMESPACE=keycloak
 export KEYCLOAK_REALM=modernengg
@@ -92,7 +95,11 @@ fi
 # Default cluster names set. To override, set them as environment variables.
 export TF_VAR_mgmt_cluster_name="modern-engineering"
 export TF_VAR_dev_cluster_name="modernengg-dev"
-export TF_VAR_prod_cluster_name="modernengg-prod"
+export TF_VAR_prod_cluster_name="modernengg-prod"i
+
+# Default DB Cluster and EC2 names set. To override, set them as environment variables.
+
+
 
 # SAML IDP Metadata url for keycloak
 export TF_VAR_grafana_keycloak_idp_url="http://${DNS_HOSTNAME}/keycloak/realms/${KEYCLOAK_REALM}/protocol/saml/descriptor"

@@ -1,9 +1,3 @@
-variable "vpc_id" {}
-variable "subnet_id" {}
-variable "vpc_cidr" {}
-variable "name_prefix" {}
-variable "key_name" {}
-
 resource "aws_security_group" "ec2_sg" {
   name        = "${var.name_prefix}ec2_sql_server_sg"
   description = "Security group for EC2 SQL Server instance"
@@ -55,7 +49,7 @@ resource "aws_secretsmanager_secret_version" "ec2_credentials" {
 resource "aws_instance" "sql_server_instance" {
   ami           = "ami-034e95056cd0531b9"
   instance_type = "c5.2xlarge"
-  subnet_id     = var.subnet_id
+  subnet_id     = var.vpc_private_subnets[0]
 
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
 
