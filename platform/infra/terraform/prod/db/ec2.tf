@@ -1,5 +1,5 @@
 module "ec2" {
-    source      = "../database/ec2"
+    source      = "../../database/ec2"
     vpc_id      = var.vpc_id
     vpc_private_subnets   = var.vpc_private_subnets
     vpc_cidr    = var.vpc_cidr

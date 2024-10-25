@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: create-dev-and-prod-env-${{values.name}}
+  name: create-env-ec2-sql-${{values.name}}
   namespace: ${{values.namespace}}
 spec:
   template:
@@ -13,7 +13,7 @@ spec:
         - /bin/bash
         - -c
         - |
-          aws --region ${{values.aws_region}} codebuild start-build --project-name modernengg-codebuild
+          aws --region ${{values.aws_region}} codebuild start-build --project-name ec2-modernengg-codebuild
         envFrom:
         - secretRef:
             name: aws-credentials

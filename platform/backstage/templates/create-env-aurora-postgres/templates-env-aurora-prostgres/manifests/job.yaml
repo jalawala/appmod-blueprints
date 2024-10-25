@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: create-dev-and-prod-env-Aurora-Postgres-${{values.name}}
+  name: create-env-aurora-postgres-${{values.name}}
   namespace: ${{values.namespace}}
 spec:
   template:
@@ -13,7 +13,7 @@ spec:
         - /bin/bash
         - -c
         - |
-          aws --region ${{values.aws_region}} codebuild start-build --project-name modernengg-codebuild
+          aws --region ${{values.aws_region}} codebuild start-build --project-name db-modernengg-codebuild
         envFrom:
         - secretRef:
             name: aws-credentials

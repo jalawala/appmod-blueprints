@@ -1,6 +1,6 @@
 
  module "aurora" {
-    source      = "../database/aurora"
+    source      = "../../database/aurora"
     vpc_id      = var.vpc_id
     vpc_private_subnets  = var.vpc_private_subnets
     vpc_cidr    = var.vpc_cidr

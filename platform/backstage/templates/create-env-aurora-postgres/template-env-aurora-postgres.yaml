@@ -1,9 +1,9 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  description: Deploys dev and prod clusters on EKS
-  name: create-dev-and-prod-env
-  title: Create Dev and Prod Environment
+  description: Deploys Aurora Postgres DB
+  name: create-env-aurora-postgres
+  title: Create Aurora Postgres DB
 spec:
   owner: guest
   type: service
@@ -30,7 +30,7 @@ spec:
     - action: fetch:template
       id: fetch-base
       input:
-        url: ./templates-create-dev-and-prod-env/
+        url: ./templates-env-aurora-postgres/
         values:
           name: ${{ parameters.name }}
           namespace: ${{ parameters.namespace }}
@@ -40,7 +40,7 @@ spec:
       name: Publishing to a gitea git repository
       action: publish:gitea
       input:
-        description: CodeBuild create clusters template
+        description: CodeBuild create DB clusters template
         # Hard coded value for this demo purposes only.
         repoUrl: ${{parameters.repoUrl}}?repo=${{parameters.name}}
         defaultBranch: main

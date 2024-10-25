@@ -1,9 +1,9 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  description: Deploys Aurora Postgres DB
-  name: create-dev-and-prod-env-Aurora-Postgres
-  title: Create Aurora Postgres DB
+  description: Deploys EC SQL clusters
+  name: create-env-ec2-sql
+  title: Create EC2 SQL Instance
 spec:
   owner: guest
   type: service
@@ -30,7 +30,7 @@ spec:
     - action: fetch:template
       id: fetch-base
       input:
-        url: ./templates-create-dev-and-prod-env-Aurora-Postgres/
+        url: ./templates-env-sql-ec2/
         values:
           name: ${{ parameters.name }}
           namespace: ${{ parameters.namespace }}
