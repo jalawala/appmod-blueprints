@@ -11,8 +11,8 @@ spec:
   project: modern-engg
   source:
     repoURL: ${GITHUB_URL}
-    targetRevision: feature/upgradeToPathBasedRouting
-    path: packages/crossplane-compositions/dev/
+    targetRevision: HEAD
+    path: "platform/crossplane/compositions"
   destination:
     server: "https://kubernetes.default.svc"
     namespace: crossplane-system
