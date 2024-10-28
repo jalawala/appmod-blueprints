@@ -5,7 +5,6 @@ metadata:
   description: App Mod Backstage Templates
 spec:
   targets:
-    - ./rds-cluster/template.yaml
     - ./s3-bucket/template.yaml
     - ./app-deploy/template.yaml
     - ./app-deploy-without-repo/template.yaml
