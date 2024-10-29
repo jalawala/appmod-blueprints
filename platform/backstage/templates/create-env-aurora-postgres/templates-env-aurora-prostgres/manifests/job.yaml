@@ -14,8 +14,5 @@ spec:
         - -c
         - |
           aws --region ${{values.aws_region}} codebuild start-build --project-name db-modernengg-codebuild
-        envFrom:
-        - secretRef:
-            name: aws-credentials
       restartPolicy: Never
 
