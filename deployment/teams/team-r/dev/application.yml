@@ -7,7 +7,7 @@ spec:
     - name: dynamodb-table
       type: dynamodb-table
       properties:
-        tableName: rust-microservice-table
+        tableName: rust-service-table
         partitionKeyName: partition_key
         sortKeyName: sort_key 
         region: us-west-2
@@ -27,16 +27,76 @@ spec:
     - name: rust-backend
       type: appmod-service
       properties:
-        image:  929819487611.dkr.ecr.us-west-2.amazonaws.com/moderneng/rust-microservice:latest
+        image:  891612574912.dkr.ecr.us-west-2.amazonaws.com/modernengg/rust-microservice:latest
         image_name: rust-microservice
         port: 80
         targetPort: 8080
-        replicas: 1
+        replicas: 5
         serviceAccount: "rust-service-account"
-        # functionalGate:
-        #   pause: "10s" 
-        #   image: "public.ecr.aws/i8e1q7x5/appmod-javafunctest:latest"
-        #   extraArgs: "red"
+        dummyTestVariable: "test-67"
+        functionalMetric:
+          interval: "1s" # user needs to add s, m, or h next to the number.
+          count: 1
+          evaluationCriteria: [
+            {
+              function: "sum",
+              successOrFailCondition: "success",
+              metric: "rocket_http_requests_total",
+              comparisonType: ">",
+              threshold: 0
+            },
+            {
+              successOrFailCondition: "success",
+              metric: "rocket_http_requests_total",
+              comparisonType: ">",
+              threshold: 0
+            },
+            {
+              successOrFailCondition: "success",
+              metric: "rocket_http_requests_total",
+              comparisonType: ">",
+              threshold: 0
+            },
+            {
+              successOrFailCondition: "success",
+              metric: "rocket_http_requests_total",
+              comparisonType: ">",
+              threshold: 0
+            },
+            {
+              successOrFailCondition: "success",
+              metric: "rocket_http_requests_total",
+              comparisonType: ">",
+              threshold: 0
+            }
+          ]
+          # the following evaluationCriteriaRatios is another idea I'd like to discuss more
+          #evaluationCriteriaRatios: [
+          #  {
+          #    successOrFailCondition: "success",
+          #    overallFunction: "sum",
+          #    numeratorFunction: "sum",
+          #    denominatorFunction: "sum",
+          #    numeratorMetric: "rocket_http_requests_total",
+          #    denominatorMetric2: "rocket_http_requests_total",
+          #    comparisonType: ">",
+          #    threshold: 0
+          #  },
+          #  {
+          #    successOrFailCondition: "fail",
+          #    overallFunction: "sum",
+          #    numeratorFunction: "sum",
+          #    denominatorFunction: "sum",
+          #    numeratorMetric: "rocket_http_requests_total",
+          #    denominatorMetric2: "rocket_http_requests_total",
+          #    comparisonType: ">",
+          #    threshold: 0
+          #  }
+          #]
+        #functionalGate:
+        #  pause: "10s" 
+        #  image: "public.ecr.aws/i8e1q7x5/appmod-javafunctest:latest"
+        #  extraArgs: "red"
         # performanceGate:
         #   pause: "10s"
         #   image: "public.ecr.aws/i8e1q7x5/javaperftest:latest"

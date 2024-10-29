@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: rust-svc-load-test
+  namespace: argo-rollouts
+  labels:
+    workload: rust-backend
+spec:
+  containers:
+    - name: artillery-container
+      image: 891612574912.dkr.ecr.us-west-2.amazonaws.com/modernengg/rust-test@sha256:141b2d72f06b7d20a4bad596dba6d34d59b88ad71905aa4a76634e8a0946659f # TODO: Use the integration image here
+      # <service-name>.<namespace>.svc.cluster.local:<service-port>
+      command: ["run", "run", "-t", "http://rust-backend.argo-rollouts.svc.cluster.local", "/scripts/benchmark.yaml"]

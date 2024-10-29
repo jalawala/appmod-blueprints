@@ -36,6 +36,23 @@ template: {
 						pause: duration: parameter.functionalGate.pause
 					},
 					},
+					if parameter.functionalMetric !=  _|_ {
+					{
+						analysis: {
+							templates: [
+								{
+									templateName: "functional-metric-\(context.name)"
+								}
+							],
+							args: [
+								{
+									name: "service-name"
+									value: previewService
+								}
+							]
+						}
+					}
+					},
 					if parameter.functionalGate != _|_ {
 					{
 						analysis: {
@@ -57,13 +74,13 @@ template: {
 						setWeight: 40
 					},
 					{
-						pause: duration: "15s"
+						pause: duration: "1s"
 					},
 					{
 						setWeight: 60
 					},
 					{
-						pause: duration: "15s"
+						pause: duration: "1s"
 					},
 					{
 						setWeight: 80
@@ -103,6 +120,10 @@ template: {
 					ports: [{
 						containerPort: parameter.targetPort
 					}]
+					env: [{
+					name:  "dummy-variable"
+					value: parameter.dummyTestVariable
+					}]
 				}]
 				spec: serviceAccountName: parameter.serviceAccount
 			}
@@ -133,6 +154,50 @@ template: {
 				}]
             }
         }, 
+		if parameter.functionalMetric != _|_ {
+			"success-rate-analysis-template": {
+				apiVersion: "argoproj.io/v1alpha1"
+				kind:       "AnalysisTemplate"
+				metadata: {
+					name:      "functional-metric-\(context.name)"
+				}
+				spec: {
+					args: [{
+						name: "amp-workspace"
+						valueFrom: secretKeyRef: {
+							name: "workspace-url"
+							key:  "secretURL"
+						}
+					}]
+					metrics: 
+					[
+						for idx, criteria in parameter.functionalMetric.evaluationCriteria {
+							name: "metric-\(context.name)-\(idx)"
+							interval: parameter.functionalMetric.interval
+							count: parameter.functionalMetric.count
+							if criteria.successOrFailCondition == "success" {
+								successCondition: "result[0] \(criteria.comparisonType) \(criteria.threshold)"
+							}
+							if criteria.successOrFailCondition == "fail" {
+								failureCondition: "result[0] \(criteria.comparisonType) \(criteria.threshold)"
+							}
+							provider: prometheus: {
+								address: "https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-6ba7e445-e203-43a5-b1b0-c7bc15e354ef"
+								query: [
+									if criteria.function != _|_ {
+										"\(criteria.function)(\(criteria.metric))"
+									}
+									if criteria.function == _|_ {
+										"\(criteria.metric)"
+									}
+								][0]
+								authentication: sigv4: region: "us-west-2"
+							}
+						}
+					]
+				}
+			}
+		},
 		if parameter.functionalGate != _|_ {
 			"appmod-functional-analysis-template": {
 				kind: "AnalysisTemplate",
@@ -219,6 +284,32 @@ template: {
 		extraArgs: *"" | string 
 	}
 
+	#MetricGate: {
+		interval: *"1s" | string
+		count: *1 | int
+		evaluationCriteria:
+		[...{
+				function?: "sum" | "rate" | "avg" | "max" | "min" | "increase" | "count"
+				successOrFailCondition: "success" | "fail"
+				metric: string
+				comparisonType: ">" | ">=" | "<" | "<=" | "==" | "!="
+				threshold: number
+			}]
+		evaluationCriteriaRatios?:
+		[
+			{
+				successOrFailCondition: "success" | "fail"
+				overallFunction?: "sum" | "rate" | "avg" | "max" | "min" | "increase" | "count"
+				numeratorFunction?: "sum" | "rate" | "avg" | "max" | "min" | "increase" | "count"
+				denominatorFunction?: "sum" | "rate" | "avg" | "max" | "min" | "increase" | "count"
+				numeratorMetric: string
+				denominatorMetric2: string
+				comparisonType: ">" | ">=" | "<" | "<=" | "==" | "!="
+				threshold: number
+			}
+		]
+	}
+
 	parameter: {
         image_name: string
         image: string
@@ -226,8 +317,10 @@ template: {
         port: *80 | int
         targetPort: *8080 | int
 		serviceAccount: *"default" | string
+		dummyTestVariable?: string
 		functionalGate?: #QualityGate
 		performanceGate?: #QualityGate
+		functionalMetric: #MetricGate
     }
 }
 
