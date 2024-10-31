@@ -33,74 +33,61 @@ spec:
         targetPort: 8080
         replicas: 5
         serviceAccount: "rust-service-account"
-        dummyTestVariable: "test-67"
+        dummyTestVariable: "test-#" # (Optional) If changed and applied changes it can trigger a rollout for testing.
         functionalMetric:
-          interval: "1s" # user needs to add s, m, or h next to the number.
-          count: 1
           evaluationCriteria: [
             {
-              function: "sum",
+              interval: "1s", # user needs to add s, m, or h next to the number (second, minute, hour).
+              count: 1,
+              function: "sum", # Optional from list of "sum" | "avg" | "max" | "min" | "count"
+              successOrFailCondition: "success", # "success" or "fail" as options.
+              metric: "rocket_http_requests_total", # Required and is case and format sensitive.
+              comparisonType: ">", # Options ">" | ">=" | "<" | "<=" | "==" | "!="
+              threshold: 0
+            },
+            {
+              interval: "1s", 
               successOrFailCondition: "success",
-              metric: "rocket_http_requests_total",
+              function: "avg",
+              metric: "rocket_http_requests_duration_seconds_sum",
               comparisonType: ">",
               threshold: 0
             },
             {
+              interval: "1s", 
+              count: 1,
               successOrFailCondition: "success",
-              metric: "rocket_http_requests_total",
+              function: "max",
+              metric: "rocket_http_requests_duration_seconds_count",
               comparisonType: ">",
               threshold: 0
             },
             {
+              interval: "1s", 
+              count: 1,
+              function: "count",
               successOrFailCondition: "success",
-              metric: "rocket_http_requests_total",
+              metric: "rocket_http_requests_duration_seconds_bucket",
               comparisonType: ">",
               threshold: 0
             },
             {
-              successOrFailCondition: "success",
+              interval: "1s", 
+              count: 1,
+              successOrFailCondition: "fail",
               metric: "rocket_http_requests_total",
-              comparisonType: ">",
-              threshold: 0
-            },
-            {
-              successOrFailCondition: "success",
-              metric: "rocket_http_requests_total",
-              comparisonType: ">",
+              comparisonType: "<",
               threshold: 0
             }
           ]
-          # the following evaluationCriteriaRatios is another idea I'd like to discuss more
-          #evaluationCriteriaRatios: [
-          #  {
-          #    successOrFailCondition: "success",
-          #    overallFunction: "sum",
-          #    numeratorFunction: "sum",
-          #    denominatorFunction: "sum",
-          #    numeratorMetric: "rocket_http_requests_total",
-          #    denominatorMetric2: "rocket_http_requests_total",
-          #    comparisonType: ">",
-          #    threshold: 0
-          #  },
-          #  {
-          #    successOrFailCondition: "fail",
-          #    overallFunction: "sum",
-          #    numeratorFunction: "sum",
-          #    denominatorFunction: "sum",
-          #    numeratorMetric: "rocket_http_requests_total",
-          #    denominatorMetric2: "rocket_http_requests_total",
-          #    comparisonType: ">",
-          #    threshold: 0
-          #  }
-          #]
-        #functionalGate:
-        #  pause: "10s" 
-        #  image: "public.ecr.aws/i8e1q7x5/appmod-javafunctest:latest"
-        #  extraArgs: "red"
         # performanceGate:
         #   pause: "10s"
         #   image: "public.ecr.aws/i8e1q7x5/javaperftest:latest"
         #   extraArgs: "160"
+        #functionalGate:
+        #  pause: "10s" 
+        #  image: "public.ecr.aws/i8e1q7x5/appmod-javafunctest:latest"
+        #  extraArgs: "red"
       dependsOn:
         - rust-service-account
       traits: 
@@ -110,4 +97,3 @@ spec:
             rewritePath: true 
             http:
               /rust-app: 80
-      

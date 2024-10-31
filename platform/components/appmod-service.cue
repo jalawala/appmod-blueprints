@@ -13,6 +13,9 @@
 template: {
 
     let previewService = "\(context.name)-preview"
+	let ampWorkspaceUrl = "{{args.amp-workspace-url}}"
+	let ampWorkspaceRegion = "{{args.amp-workspace-region}}"
+	let prometheusTargetQuery = "k8s_container_name=\"\(parameter.image_name)\", k8s_namespace_name=\"\(context.namespace)\""
 
 	output: {
 		apiVersion: "argoproj.io/v1alpha1"
@@ -153,7 +156,39 @@ template: {
 					targetPort: parameter.targetPort
 				}]
             }
-        }, 
+        },
+		"amp-workspace-secrets": {
+			apiVersion: "external-secrets.io/v1beta1"
+			kind:       "ExternalSecret"
+			metadata: {
+				name:      "amp-workspace-secrets"
+				namespace: "test-123"
+			}
+			spec: {
+				secretStoreRef: {
+					name: "cluster-secretstore-sm"
+					kind: "ClusterSecretStore"
+				}
+				target: {
+					name: "amp-workspace"
+					template: type: "Opaque"
+				}
+				data: [
+					{
+						secretKey: "amp-workspace-url"
+						remoteRef: {
+							key: "/platform/amp-workspace"
+						}
+					},
+					{
+						secretKey: "amp-workspace-region"
+						remoteRef: {
+							key: "/platform/amp-region"
+						}
+					}
+				]
+			}
+		}
 		if parameter.functionalMetric != _|_ {
 			"success-rate-analysis-template": {
 				apiVersion: "argoproj.io/v1alpha1"
@@ -163,35 +198,43 @@ template: {
 				}
 				spec: {
 					args: [{
-						name: "amp-workspace"
+						name: "amp-workspace-url"
 						valueFrom: secretKeyRef: {
-							name: "workspace-url"
-							key:  "secretURL"
+							name: "amp-workspace"
+							key: "amp-workspace-url"
+						}
+					}, {
+						name: "amp-workspace-region"
+						valueFrom: secretKeyRef: {
+							name: "amp-workspace"
+							key: "amp-workspace-region"
 						}
 					}]
 					metrics: 
 					[
 						for idx, criteria in parameter.functionalMetric.evaluationCriteria {
-							name: "metric-\(context.name)-\(idx)"
-							interval: parameter.functionalMetric.interval
-							count: parameter.functionalMetric.count
+							name: "metric[\(idx)]-\(context.name): \(criteria.metric)"
 							if criteria.successOrFailCondition == "success" {
+								interval: criteria.interval
+								count: criteria.count
 								successCondition: "result[0] \(criteria.comparisonType) \(criteria.threshold)"
 							}
 							if criteria.successOrFailCondition == "fail" {
+								interval: criteria.interval
+								count: criteria.count
 								failureCondition: "result[0] \(criteria.comparisonType) \(criteria.threshold)"
 							}
 							provider: prometheus: {
-								address: "https://aps-workspaces.us-west-2.amazonaws.com/workspaces/ws-6ba7e445-e203-43a5-b1b0-c7bc15e354ef"
+								address: ampWorkspaceUrl
 								query: [
 									if criteria.function != _|_ {
-										"\(criteria.function)(\(criteria.metric))"
+										"\(criteria.function)(\(criteria.metric){\(prometheusTargetQuery)})"
 									}
 									if criteria.function == _|_ {
-										"\(criteria.metric)"
+										"\(criteria.metric){\(prometheusTargetQuery)}"
 									}
 								][0]
-								authentication: sigv4: region: "us-west-2"
+								authentication: sigv4: region: ampWorkspaceRegion
 							}
 						}
 					]
@@ -285,29 +328,16 @@ template: {
 	}
 
 	#MetricGate: {
-		interval: *"1s" | string
-		count: *1 | int
 		evaluationCriteria:
 		[...{
-				function?: "sum" | "rate" | "avg" | "max" | "min" | "increase" | "count"
-				successOrFailCondition: "success" | "fail"
+				interval: *"1s" | string
+				count: *1 | int
+				function?: "sum" | "avg" | "max" | "min" | "count"
+				successOrFailCondition: *"success" | "fail"
 				metric: string
-				comparisonType: ">" | ">=" | "<" | "<=" | "==" | "!="
-				threshold: number
+				comparisonType: *">" | ">=" | "<" | "<=" | "==" | "!="
+				threshold: *0 | number
 			}]
-		evaluationCriteriaRatios?:
-		[
-			{
-				successOrFailCondition: "success" | "fail"
-				overallFunction?: "sum" | "rate" | "avg" | "max" | "min" | "increase" | "count"
-				numeratorFunction?: "sum" | "rate" | "avg" | "max" | "min" | "increase" | "count"
-				denominatorFunction?: "sum" | "rate" | "avg" | "max" | "min" | "increase" | "count"
-				numeratorMetric: string
-				denominatorMetric2: string
-				comparisonType: ">" | ">=" | "<" | "<=" | "==" | "!="
-				threshold: number
-			}
-		]
 	}
 
 	parameter: {
@@ -320,7 +350,6 @@ template: {
 		dummyTestVariable?: string
 		functionalGate?: #QualityGate
 		performanceGate?: #QualityGate
-		functionalMetric: #MetricGate
+		functionalMetric?: #MetricGate
     }
 }
-
