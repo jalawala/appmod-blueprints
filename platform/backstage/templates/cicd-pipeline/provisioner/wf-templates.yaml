@@ -155,6 +155,8 @@ spec:
       value: ${{values.hostname}}/gitea/giteaAdmin/${{values.appname}}
     - name: aws_region
       value: ${{values.aws_region}}
+    - name: tag_version
+      value: init
     - name: dockerfile_path
       value: ${{values.dockerfile_path}}
     - name: deployment_path
