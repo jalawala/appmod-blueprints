@@ -13,13 +13,7 @@ module.exports = {
       }
     ]
   },
-  async redirects() {
-    return [
-      {
-        source: '/password',
-        destination: '/',
-        permanent: true
-      }
-    ];
-  }
+  output: "standalone",
+  assetPrefix: "/unicorn",
+  basePath: '/unicorn',
 };

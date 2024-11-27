@@ -137,7 +137,7 @@ export AWS_REGION=$TF_VAR_aws_region
 configure_keycloak
 
 # Update SAML Auth for Grafana Workspace
-update_workspace_saml_auth || true
+# update_workspace_saml_auth || true
 
 cd "${REPO_ROOT}/platform/infra/terraform/"
 
@@ -280,7 +280,8 @@ kubectl apply -f ${REPO_ROOT}/platform/infra/terraform/deploy-apps/manifests/
 # Setup Gitea Repo
 ${REPO_ROOT}/platform/infra/terraform/giteaInit.sh
 
-# Sleeping for Crossplane to be ready in DEV and PROD Cluster
+# Sleeping for Crossplane to be ready in DEV and PROD Cluster and restarting backstage pod
+kubectl rollout restart deployment backstage -n backstage
 sleep 120
 
 # Setup CrossPlane IRSA for DEV Cluster

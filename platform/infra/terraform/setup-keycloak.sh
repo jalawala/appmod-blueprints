@@ -124,12 +124,14 @@ while true; do\n
     cd /opt/keycloak/bin/\n
     ./kcadm.sh config credentials --server http://localhost:8080/keycloak --realm master --user modernengg-admin --password $KEYCLOAK_ADMIN_PASSWORD --config /tmp/kcadm.config\n
     ./kcadm.sh update realms/master -s sslRequired=NONE --config /tmp/kcadm.config\n
+    ./kcadm.sh update realms/$KEYCLOAK_REALM -s ssoSessionIdleTimeout=7200 --config /tmp/kcadm.config\n
     ./kcadm.sh create roles -r $KEYCLOAK_REALM -s name=grafana-admin --config /tmp/kcadm.config\n
     ./kcadm.sh create roles -r $KEYCLOAK_REALM -s name=grafana-editor --config /tmp/kcadm.config\n
     ./kcadm.sh create roles -r $KEYCLOAK_REALM -s name=grafana-viewer --config /tmp/kcadm.config\n
     ./kcadm.sh create users -r $KEYCLOAK_REALM -f /tmp/admin.json --config /tmp/kcadm.config\n
     ./kcadm.sh create users -r $KEYCLOAK_REALM -f /tmp/editor.json --config /tmp/kcadm.config\n
     ./kcadm.sh create users -r $KEYCLOAK_REALM -f /tmp/viewer.json --config /tmp/kcadm.config\n
+    ./kcadm.sh add-roles --uusername user1 --rolename "grafana-admin" -r $KEYCLOAK_REALM --config /tmp/kcadm.config\n
     ADMIN_USER_ID=\$(./kcadm.sh get users -r $KEYCLOAK_REALM -q username=monitor-admin --fields id --config /tmp/kcadm.config 2>/dev/null | cut -d' ' -f5 | cut -d'\"' -f2 | tr -d '\\\n')\n
     ./kcadm.sh update users/\$ADMIN_USER_ID -r $KEYCLOAK_REALM -s 'credentials=[{\"type\":\"password\",\"value\":\"$KEYCLOAK_USER_ADMIN_PASSWORD\"}]' --config /tmp/kcadm.config\n
     EDIT_USER_ID=\$(./kcadm.sh get users -r $KEYCLOAK_REALM -q username=monitor-editor --fields id --config /tmp/kcadm.config 2>/dev/null | cut -d' ' -f5 | cut -d'\"' -f2 | tr -d '\\\n')\n
