@@ -3,6 +3,8 @@ output "eks_cluster_vpc_id" {
   value       = module.vpc.vpc_id
 }
 
+
+# Is this section needed with EKS Auto?? <<<-----------------------------------------
 output "eks_cluster_private_subnets" {
   description = "EKS Cluster VPC Private Subnets"
   value       = module.vpc.private_subnets

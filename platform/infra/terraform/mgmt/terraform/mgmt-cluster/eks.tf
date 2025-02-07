@@ -14,20 +14,27 @@ module "eks" {
   enable_cluster_creator_admin_permissions = true
   cluster_endpoint_public_access           = true
 
+  # Enable Auto Mode and reference our custom NodePool
+  cluster_compute_config = {
+    enabled    = true
+    # node_pools = ["general-purpose"]  # Calls the NodePool we created earlier
+  }
+
   cluster_addons = {
-    coredns = {
-      configuration_values = jsonencode({
-        tolerations = [
-          # Allow CoreDNS to run on the same nodes as the Karpenter controller
-          # for use during cluster creation when Karpenter nodes do not yet exist
-          {
-            key    = "karpenter.sh/controller"
-            value  = "true"
-            effect = "NoSchedule"
-          }
-        ]
-      })
-    }
+    # EKS Auto Mode makes this not needed. Would we want to add any tolerations though here outside of Karpenter?
+    # coredns = {
+    #   configuration_values = jsonencode({
+    #     tolerations = [
+    #       # Allow CoreDNS to run on the same nodes as the Karpenter controller
+    #       # for use during cluster creation when Karpenter nodes do not yet exist
+    #       {
+    #         key    = "karpenter.sh/controller"
+    #         value  = "true"
+    #         effect = "NoSchedule"
+    #       }
+    #     ]
+    #   })
+    # }
     eks-pod-identity-agent = {}
     kube-proxy             = {}
     vpc-cni                = {}
@@ -41,41 +48,43 @@ module "eks" {
   vpc_id     = module.vpc.vpc_id
   subnet_ids = module.vpc.private_subnets
 
-  eks_managed_node_groups = {
-    static_ng = {
-      use_custom_launch_template = false
-      launch_template_name       = ""
-      instance_types             = ["m5.2xlarge"]
+  # EKS Auto Mode will now manage node groups, so no need for this section.
+  # eks_managed_node_groups = {
+  #   static_ng = {
+  #     use_custom_launch_template = false
+  #     launch_template_name       = ""
+  #     instance_types             = ["m5.2xlarge"]
 
-      min_size     = 2
-      max_size     = 6
-      desired_size = 2
-      disk_size    = 100
+  #     min_size     = 2
+  #     max_size     = 6
+  #     desired_size = 2
+  #     disk_size    = 100
 
-      block_device_mappings = {
-        xvda = {
-          device_name = "/dev/xvda"
-          ebs = {
-            volume_size           = 100
-            volume_type           = "gp3"
-            delete_on_termination = true
-          }
-        }
-      }
-      labels = {
-        # Used to ensure Karpenter runs on nodes that it does not manage
-        "karpenter.sh/controller" = "true"
-      }
-    }
+  #     block_device_mappings = {
+  #       xvda = {
+  #         device_name = "/dev/xvda"
+  #         ebs = {
+  #           volume_size           = 100
+  #           volume_type           = "gp3"
+  #           delete_on_termination = true
+  #         }
+  #       }
+  #     }
+  #     labels = {
+  #       # Used to ensure Karpenter runs on nodes that it does not manage
+  #       "karpenter.sh/controller" = "true"
+  #     }
+  #   }
+  # }
+
+    tags = merge(local.tags, {
+  #   # NOTE - if creating multiple security groups with this module, only tag the
+  #   # security group that Karpenter should utilize with the following tag
+  #   # (i.e. - at most, only one security group should have this tag in your account)
+  #   "karpenter.sh/discovery" = local.name
+      "eks.amazonaws.com/discovery" = "modern-engineering"
+    })
   }
-
-  tags = merge(local.tags, {
-    # NOTE - if creating multiple security groups with this module, only tag the
-    # security group that Karpenter should utilize with the following tag
-    # (i.e. - at most, only one security group should have this tag in your account)
-    "karpenter.sh/discovery" = local.name
-  })
-}
 
 output "configure_kubectl" {
   description = "Configure kubectl: make sure you're logged in with the correct AWS profile and run the following command to update your kubeconfig"
@@ -110,60 +119,90 @@ resource "kubernetes_storage_class" "ebs-gp3-sc" {
   reclaim_policy      = "Delete"
 }
 
-
 ################################################################################
 # Controller & Node IAM roles
 ################################################################################
 
-module "karpenter" {
-  source  = "terraform-aws-modules/eks/aws//modules/karpenter"
-  version = "~> 20.26.0"
+# EKS Auto Mode will now manage node groups so no need for this section.
+# module "karpenter" {
+#   source  = "terraform-aws-modules/eks/aws//modules/karpenter"
+#   version = "~> 20.26.0"
 
-  cluster_name = module.eks.cluster_name
+#   cluster_name = module.eks.cluster_name
 
-  # Name needs to match role name passed to the EC2NodeClass
-  node_iam_role_use_name_prefix   = false
-  node_iam_role_name              = local.name
-  create_pod_identity_association = true
+#   # Name needs to match role name passed to the EC2NodeClass
+#   node_iam_role_use_name_prefix   = false
+#   node_iam_role_name              = local.name
+#   create_pod_identity_association = true
 
-  tags = local.tags
+#   tags = local.tags
+# }
+
+# Revised IAM role for EKS Auto
+resource "aws_iam_role" "eks_node_role" {
+  name = "modern-engineering"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action = "sts:AssumeRole"
+    }]
+  })
+
+  tags = {
+    Name = "modern-engineering-node-role"
+  }
 }
+
+# Attach Required IAM Policies for EKS Auto Mode
+resource "aws_iam_role_policy_attachment" "eks_node_policies" {
+  for_each = toset([
+    "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
+    "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
+    "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+  ])
+
+  policy_arn = each.key
+  role       = aws_iam_role.eks_node_role.name
+}
+
 
 ################################################################################
 # Helm charts
 ################################################################################
 
-resource "helm_release" "karpenter" {
-  namespace           = "kube-system"
-  name                = "karpenter"
-  repository          = "oci://public.ecr.aws/karpenter"
-  chart               = "karpenter"
-  version             = "0.36.2"
-  wait                = false
+# EKS Auto Mode will now manage node groups so no need for this section.
+# resource "helm_release" "karpenter" {
+#   namespace           = "kube-system"
+#   name                = "karpenter"
+#   repository          = "oci://public.ecr.aws/karpenter"
+#   chart               = "karpenter"
+#   version             = "0.36.2"
+#   wait                = false
 
-  values = [
-    <<-EOT
-    nodeSelector:
-      karpenter.sh/controller: 'true'
-    tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
-      - key: karpenter.sh/controller
-        operator: Exists
-        effect: NoSchedule
-    settings:
-      clusterName: ${module.eks.cluster_name}
-      clusterEndpoint: ${module.eks.cluster_endpoint}
-      interruptionQueue: ${module.karpenter.queue_name}
-    EOT
-  ]
+#   values = [
+#     <<-EOT
+#     nodeSelector:
+#       karpenter.sh/controller: 'true'
+#     tolerations:
+#       - key: CriticalAddonsOnly
+#         operator: Exists
+#       - key: karpenter.sh/controller
+#         operator: Exists
+#         effect: NoSchedule
+#     settings:
+#       clusterName: ${module.eks.cluster_name}
+#       clusterEndpoint: ${module.eks.cluster_endpoint}
+#       interruptionQueue: ${module.karpenter.queue_name}
+#     EOT
+#   ]
 
-  lifecycle {
-    ignore_changes = [
-      repository_password
-    ]
-  }
+#   lifecycle {
+#     ignore_changes = [
+#       repository_password
+#     ]
+#   }
 
-}
-
-
+# }
