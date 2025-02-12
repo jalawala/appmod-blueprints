@@ -17,7 +17,6 @@ module "eks" {
   # Enable Auto Mode and reference our custom NodePool
   cluster_compute_config = {
     enabled    = true
-    # node_pools = ["general-purpose"]  # Calls the NodePool we created earlier
   }
 
   cluster_addons = {
@@ -38,9 +37,9 @@ module "eks" {
     eks-pod-identity-agent = {}
     kube-proxy             = {}
     vpc-cni                = {}
-    aws-ebs-csi-driver     = {
-      service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
-    }
+    # aws-ebs-csi-driver     = { # EKS Auto Mode installs and manages EBS CSI driver so this is not needed.
+    #  service_account_role_arn = module.ebs_csi_driver_irsa.iam_role_arn
+    #}
   }
 
   enable_irsa = true
@@ -95,28 +94,35 @@ output "configure_kubectl" {
 # EBS Configuration
 ################################################################################
 
-module "ebs_csi_driver_irsa" {
-  source                = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
-  role_name             = "${local.name}-ebs-csi-driver"
-  role_policy_arns = {
-    policy = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
-  }
-  oidc_providers = {
-    main = {
-      provider_arn               = module.eks.oidc_provider_arn
-      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
-    }
-  }
-  tags = local.tags
-}
+#module "ebs_csi_driver_irsa" { #-------------------------------------------------------------------------------------------------------------------
+#  source                = "terraform-aws-modules/iam/aws//modules/iam-role-for-service-accounts-eks"
+#  role_name             = "${local.name}-ebs-csi-driver"
+#  role_policy_arns = {
+#    policy = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+#  }
+#  oidc_providers = {
+#    main = {
+#      provider_arn               = module.eks.oidc_provider_arn
+#      namespace_service_accounts = ["kube-system:ebs-csi-controller-sa"]
+#    }
+#  }
+#  tags = local.tags
+#}
 
+## This remiains the same since EKS Auto Mode and Karpenter utilize StorageClass in the same way. EKS Auto Mode simply does not need the IRSA role Karpenter needed.
 resource "kubernetes_storage_class" "ebs-gp3-sc" {
   metadata {
     name = "gp3"
   }
 
-  storage_provisioner = "ebs.csi.aws.com"
+  storage_provisioner = "ebs.csi.eks.amazonaws.com" # Altering this to target EKS Auto Mode.
+  volume_binding_mode = "WaitForFirstConsumer"
   reclaim_policy      = "Delete"
+
+  parameters = {
+    type      = "gp3"     # Required: Specify volume type # Is this fine?-------------------------------------------------------------------------------------------------------------------
+    encrypted = "true"    # Required: EKS Auto Mode provisions encrypted volumes # Is this fine?-------------------------------------------------------------------------------------------------------------------
+  }
 }
 
 ################################################################################
@@ -138,7 +144,7 @@ resource "kubernetes_storage_class" "ebs-gp3-sc" {
 #   tags = local.tags
 # }
 
-# Revised IAM role for EKS Auto
+# Revised IAM Role for EKS Auto Mode
 resource "aws_iam_role" "eks_node_role" {
   name = "modern-engineering"
 
@@ -159,15 +165,145 @@ resource "aws_iam_role" "eks_node_role" {
 # Attach Required IAM Policies for EKS Auto Mode
 resource "aws_iam_role_policy_attachment" "eks_node_policies" {
   for_each = toset([
-    "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy",
-    "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly",
-    "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+    "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPullOnly",
+    "arn:aws:iam::aws:policy/AmazonEKSWorkerNodeMinimalPolicy",
+    "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore",
+    "arn:aws:iam::aws:policy/AmazonSSMPatchAssociation"
   ])
 
   policy_arn = each.key
   role       = aws_iam_role.eks_node_role.name
 }
 
+# Attach Custom IAM Policy for Auto Mode (custom-aws-tagging-eks-auto)
+resource "aws_iam_policy" "custom_aws_tagging_eks_auto" {
+  name        = "custom-aws-tagging-eks-auto"
+  description = "Custom IAM policy for EKS Auto Mode node permissions"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "Compute"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateFleet",
+          "ec2:RunInstances",
+          "ec2:CreateLaunchTemplate"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/eks:eks-cluster-name" = "$${aws:PrincipalTag/eks:eks-cluster-name}"
+          }
+          StringLike = {
+            "aws:RequestTag/eks:kubernetes-node-class-name" = "*"
+            "aws:RequestTag/eks:kubernetes-node-pool-name"  = "*"
+          }
+        }
+      },
+      {
+        Sid    = "Storage"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateVolume",
+          "ec2:CreateSnapshot"
+        ]
+        Resource = [
+          "arn:aws:ec2:*:*:volume/*",
+          "arn:aws:ec2:*:*:snapshot/*"
+        ]
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/eks:eks-cluster-name" = "$${aws:PrincipalTag/eks:eks-cluster-name}"
+          }
+        }
+      },
+      {
+        Sid    = "Networking"
+        Effect = "Allow"
+        Action = "ec2:CreateNetworkInterface"
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/eks:eks-cluster-name" = "$${aws:PrincipalTag/eks:eks-cluster-name}"
+          }
+          StringLike = {
+            "aws:RequestTag/eks:kubernetes-cni-node-name" = "*"
+          }
+        }
+      },
+      {
+        Sid    = "LoadBalancer"
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:CreateLoadBalancer",
+          "elasticloadbalancing:CreateTargetGroup",
+          "elasticloadbalancing:CreateListener",
+          "elasticloadbalancing:CreateRule",
+          "ec2:CreateSecurityGroup"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/eks:eks-cluster-name" = "$${aws:PrincipalTag/eks:eks-cluster-name}"
+          }
+        }
+      },
+      {
+        Sid    = "ShieldProtection"
+        Effect = "Allow"
+        Action = [
+          "shield:CreateProtection"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/eks:eks-cluster-name" = "$${aws:PrincipalTag/eks:eks-cluster-name}"
+          }
+        }
+      },
+      {
+        Sid    = "ShieldTagResource"
+        Effect = "Allow"
+        Action = [
+          "shield:TagResource"
+        ]
+        Resource = "arn:aws:shield::*:protection/*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/eks:eks-cluster-name" = "$${aws:PrincipalTag/eks:eks-cluster-name}"
+          }
+        }
+      }
+    ]
+  })
+}
+
+## Below is responsible for giving EKS Auto Mode the permissions it needs to access the cluster and create its needed instances.
+# Attach the Custom IAM Policy to the EKS Node Role
+resource "aws_iam_role_policy_attachment" "custom_aws_tagging_eks_auto_attach" {
+  policy_arn = aws_iam_policy.custom_aws_tagging_eks_auto.arn
+  role       = aws_iam_role.eks_node_role.name
+}
+
+# Create the access entry for EC2 nodes in EKS Auto Mode
+resource "aws_eks_access_entry" "auto_mode_node_access" {
+  cluster_name  = module.eks.cluster_name
+  principal_arn = aws_iam_role.eks_node_role.arn  # Dynamically uses modern-engineering role
+  type          = "EC2"
+}
+
+# Associate the Auto Node Policy with EKS Auto Mode Nodes
+resource "aws_eks_access_policy_association" "auto_mode_node_policy" {
+  cluster_name  = module.eks.cluster_name
+  principal_arn = aws_iam_role.eks_node_role.arn  # Dynamically uses modern-engineering role
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAutoNodePolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}
 
 ################################################################################
 # Helm charts

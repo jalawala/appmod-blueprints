@@ -18,20 +18,8 @@ terraform apply -auto-approve
 aws eks --region us-west-2 update-kubeconfig --name modern-engineering
 
 #kubectl apply -f ./karpenter.yaml # This is responsible for installing Karpenter to the management cluster. Commenting it out since EKS Auto should cover it.
-kubectl apply -f ./auto-mode.yaml
-
-# Wait until custom node pool is ready (ensures new nodes are provisioned before scaling down default)
-#echo "Waiting for custom node pool to become ready..."
-#until kubectl get nodes | grep "Ready"; do
-#  echo "Waiting for nodes to be ready..."
-#  sleep 10
-#done
-
-# Scale down the default 'general-purpose' node pool to 0
-#echo "Scaling down the default general-purpose node pool..."
-#eksctl scale nodegroup --cluster modern-engineering --name general-purpose --nodes=0
-
-echo "DONE ELI."
+# kubectl apply -f eks-auto-storage-class.yaml # Installs the needed storage specifications AutoMode will use. Don't need unless we need Persistent storage.
+kubectl apply -f ./auto-mode.yaml # Installs AutoMode to the management cluster.
 
 #export GITHUB_URL=$(yq '.repo_url' ${REPO_ROOT}/platform/infra/terraform/mgmt/setups/config.yaml)
 
