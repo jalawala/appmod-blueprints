@@ -19,7 +19,7 @@ module "vpc" {
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = 1
     # Tags subnets for Auto-Mode auto-discovery
-    "eks.amazonaws.com/discovery" = "modern-engineering"
+    "eks.amazonaws.com/discovery" = local.name
   }
 
   tags = local.tags
