@@ -7,7 +7,7 @@ module "eks" {
   version = "~> 20.10"
 
   cluster_name    = local.name
-  cluster_version = "1.30"
+  cluster_version = local.eks_version
 
   # Give the Terraform identity admin access to the cluster
   # which will allow it to deploy resources into the cluster
