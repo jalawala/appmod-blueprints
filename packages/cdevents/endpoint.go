@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	cdevents "github.com/cdevents/sdk-go/pkg/api"
+	cdevents "github.com/cdevents/sdk-go/pkg/api/v04"
 	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
