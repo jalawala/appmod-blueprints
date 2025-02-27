@@ -94,7 +94,7 @@ else
 fi
 
 # Default cluster names set. To override, set them as environment variables.
-export TF_VAR_mgmt_cluster_name="modern-engineering"
+export TF_VAR_mgmt_cluster_name="idp-admin"
 export TF_VAR_dev_cluster_name="modernengg-dev"
 export TF_VAR_prod_cluster_name="modernengg-prod"
 

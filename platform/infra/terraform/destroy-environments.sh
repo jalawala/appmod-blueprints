@@ -78,7 +78,7 @@ export TF_eks_cluster_private_subnets=$(terraform output -json eks_cluster_priva
 export TF_eks_cluster_vpc_cidr=$(terraform output -raw vpc_cidr)
 export TF_eks_cluster_private_az=$(terraform output -json availability_zones)
 
-aws eks --region $TF_VAR_aws_region update-kubeconfig --name modern-engineering
+aws eks --region $TF_VAR_aws_region update-kubeconfig --name idp-admin
 
 cd ${REPO_ROOT}/platform/infra/terraform/
 

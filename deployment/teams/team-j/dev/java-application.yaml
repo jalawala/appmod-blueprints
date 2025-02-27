@@ -31,7 +31,7 @@ spec:
               - java-s3
               - java-rds
             clusterRegion: us-west-2
-            clusterName: modern-engineering
+            clusterName: idp-admin
     - name: java-s3
       type: s3-bucket
       properties:

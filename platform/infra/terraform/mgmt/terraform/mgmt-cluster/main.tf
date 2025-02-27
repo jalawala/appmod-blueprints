@@ -60,7 +60,7 @@ data "aws_ecrpublic_authorization_token" "token" {
 data "aws_availability_zones" "available" {}
 
 locals {
-  name   = "modern-engineering"
+  name   = "idp-admin"
   region = "us-west-2"
 
   vpc_cidr = "10.0.0.0/16"
@@ -78,7 +78,7 @@ locals {
 resource "aws_cloudformation_stack" "usage_tracking" {
   count = var.usage_tracking_tag != null ? 1 : 0
 
-  name = "modern-engineering"
+  name = "idp-admin"
 
   on_failure = "DO_NOTHING"
   template_body = jsonencode({

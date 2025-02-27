@@ -21,7 +21,7 @@ variable "region" {
 
 variable "cluster_name" {
   description = "EKS Cluster name"
-  default     = "modern-engineering"
+  default     = "idp-admin"
   type        = string
 }
 

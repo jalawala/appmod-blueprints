@@ -15,7 +15,7 @@ cd "${REPO_ROOT}/platform/infra/terraform/mgmt/terraform/mgmt-cluster"
 terraform init -upgrade
 terraform apply -auto-approve
 
-aws eks --region us-west-2 update-kubeconfig --name modern-engineering
+aws eks --region us-west-2 update-kubeconfig --name idp-admin
 
 kubectl apply -f ./karpenter.yaml
 

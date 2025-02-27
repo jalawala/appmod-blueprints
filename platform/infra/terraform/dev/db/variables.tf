@@ -17,7 +17,7 @@ variable "vpc_private_subnets" {
 variable "vpc_name" {
   description = "Name of the existing VPC (leave empty to create a new VPC)"
   type        = string
-  default     = "modern-engineering"
+  default     = "idp-admin"
 }
 
 variable "name_prefix" {

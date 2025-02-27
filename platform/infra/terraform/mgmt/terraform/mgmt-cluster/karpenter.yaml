@@ -5,7 +5,7 @@ metadata:
   name: default
 spec:
   amiFamily: AL2
-  role: "modern-engineering"
+  role: "idp-admin"
   blockDeviceMappings:
     - deviceName: /dev/xvda
       ebs:
@@ -13,12 +13,12 @@ spec:
         volumeType: gp3
   subnetSelectorTerms:
     - tags:
-        karpenter.sh/discovery: modern-engineering
+        karpenter.sh/discovery: idp-admin
   securityGroupSelectorTerms:
     - tags:
-        karpenter.sh/discovery: modern-engineering
+        karpenter.sh/discovery: idp-admin
   tags:
-    karpenter.sh/discovery: modern-engineering
+    karpenter.sh/discovery: idp-admin
 ---
 apiVersion: karpenter.sh/v1beta1
 kind: NodePool
